@@ -119,6 +119,42 @@
             text-shadow: 0 0 20px rgba(196, 30, 58, 0.5);
         }
 
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            cursor: none;
+            color: var(--white);
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .menu-toggle:hover {
+            color: var(--crimson);
+            transform: scale(1.1);
+        }
+
+        .menu-line {
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+
+        .menu-toggle.active .menu-line-1 {
+            transform: translateY(6px) rotate(45deg);
+        }
+
+        .menu-toggle.active .menu-line-2 {
+            opacity: 0;
+            transform: scaleX(0);
+        }
+
+        .menu-toggle.active .menu-line-3 {
+            transform: translateY(-6px) rotate(-45deg);
+        }
+
         .nav-links {
             display: flex;
             gap: 3rem;
@@ -134,7 +170,6 @@
             position: relative;
             padding-bottom: 0.3rem;
             transition: color 0.3s;
-            cursor: none;
             opacity: 0.8;
             transform: translateY(0);
             transition: all 0.3s ease;
@@ -241,7 +276,6 @@
             transition: all 0.3s;
             position: relative;
             overflow: hidden;
-            cursor: none;
         }
 
         .cta::before {
@@ -482,20 +516,113 @@
         }
 
         .cursor {
-            width: 20px;
-            height: 20px;
-            border: 1px solid var(--crimson);
+            width: 24px;
+            height: 24px;
+            border: 1.5px solid var(--crimson);
             border-radius: 50%;
             position: fixed;
             pointer-events: none;
             z-index: 9999;
-            transition: transform 0.15s ease, opacity 0.15s ease;
+            transition: transform 0.2s ease, opacity 0.2s ease;
             mix-blend-mode: difference;
+            transform: translate(-50%, -50%);
+            animation: smokeMorph 6s ease-in-out infinite;
+            will-change: border-radius;
+        }
+
+        @keyframes smokeMorph {
+            0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            14% { border-radius: 40% 60% 50% 50% / 30% 70% 30% 70%; }
+            28% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+            42% { border-radius: 50% 50% 30% 70% / 70% 30% 70% 30%; }
+            57% { border-radius: 70% 30% 50% 50% / 30% 50% 70% 50%; }
+            71% { border-radius: 30% 70% 60% 40% / 60% 40% 30% 70%; }
+            85% { border-radius: 50% 40% 40% 60% / 40% 60% 40% 60%; }
+            100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+        }
+
+        .cursor-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--crimson);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.08s ease;
+            transform: translate(-50%, -50%);
         }
 
         .cursor.active {
-            transform: scale(2);
-            opacity: 0.5;
+            transform: translate(-50%, -50%) scale(1.4);
+            opacity: 0.7;
+        }
+
+        .cursor-dot.active {
+            transform: translate(-50%, -50%) scale(2.2);
+        }
+
+        .cursor-ring {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9997;
+            border: 1px solid rgba(196, 30, 58, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: smokeMorph 6s ease-in-out infinite;
+            will-change: border-radius;
+        }
+
+        .cursor-ring-1 {
+            width: 36px;
+            height: 36px;
+            animation-delay: -1.5s;
+            animation-duration: 7s;
+        }
+
+        .cursor-ring-2 {
+            width: 48px;
+            height: 48px;
+            border-color: rgba(196, 30, 58, 0.3);
+            animation-delay: -3s;
+            animation-duration: 8s;
+        }
+
+        .cursor-ring-3 {
+            width: 60px;
+            height: 60px;
+            border-color: rgba(196, 30, 58, 0.15);
+            animation-delay: -4.5s;
+            animation-duration: 9s;
+        }
+
+        .cursor.active ~ .cursor-ring-1 {
+            transform: translate(-50%, -50%) scale(1.3);
+            opacity: 0.6;
+        }
+
+        .cursor.active ~ .cursor-ring-2 {
+            transform: translate(-50%, -50%) scale(1.2);
+            opacity: 0.4;
+        }
+
+        .cursor.active ~ .cursor-ring-3 {
+            transform: translate(-50%, -50%) scale(1.15);
+            opacity: 0.2;
+        }
+
+        .cursor-particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            border-radius: 50%;
+            background: var(--crimson);
+            animation: particleFade 0.7s ease-out forwards;
+        }
+
+        @keyframes particleFade {
+            0% { opacity: 0.9; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
         }
 
         @media (max-width: 768px) {
@@ -503,7 +630,13 @@
                 display: none;
             }
             nav {
-                padding: 1.5rem 2rem;
+                padding: 1.5rem 0;
+            }
+            .logo {
+                padding-left: 2rem;
+            }
+            .menu-toggle {
+                margin-right: 2rem;
             }
             .nav-links {
                 gap: 1.5rem;
@@ -517,9 +650,114 @@
             .intro-kanji {
                 font-size: 5rem;
             }
-            .cursor {
+
+            nav.scrolled {
+                padding: 0.75rem 0;
+                background: rgba(10, 10, 10, 0.95);
+                box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            }
+
+            nav.scrolled .logo {
+                font-size: 1.2rem;
+            }
+
+            nav.scrolled .menu-toggle {
+                transform: scale(0.9);
+            }
+
+            .nav-links {
+                position: absolute;
+                top: 100%;
+                right: 0;
+                width: 240px;
+                background: linear-gradient(180deg, rgba(10, 10, 10, 0.98) 0%, rgba(10, 10, 10, 0.98) 70%, rgba(196, 30, 58, 0.15) 100%);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0;
+                padding: 0;
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-10px);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 999;
+                border-top: 1px solid rgba(196, 30, 58, 0.3);
+                border-bottom: 1px solid rgba(196, 30, 58, 0.3);
+                border-left: none;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+                overflow: hidden;
+            }
+
+            .nav-links.active {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+
+            .nav-links li {
+                width: 100%;
+                border-bottom: 1px solid rgba(196, 30, 58, 0.15);
+            }
+
+            .nav-links li:last-child {
+                border-bottom: none;
+            }
+
+            .nav-links a {
+                display: block;
+                width: 100%;
+                padding: 1rem 1.5rem;
+                font-size: 0.85rem;
+                letter-spacing: 0.25em;
+                text-align: center;
+                opacity: 0;
+                transform: translateY(-10px);
+                transition: all 0.3s ease;
+                position: relative;
+            }
+
+            .nav-links a:hover {
+                color: var(--crimson);
+                transform: translateY(-2px);
+            }
+
+            .nav-links.active a {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .nav-links.active li:nth-child(1) a { transition-delay: 0.05s; }
+            .nav-links.active li:nth-child(2) a { transition-delay: 0.1s; }
+            .nav-links.active li:nth-child(3) a { transition-delay: 0.15s; }
+            .nav-links.active li:nth-child(4) a { transition-delay: 0.2s; }
+            .nav-links.active li:nth-child(5) a { transition-delay: 0.25s; }
+
+            .nav-links a::after {
                 display: none;
             }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            .menu-line {
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .menu-toggle.active .menu-line-1 {
+                transform: translateY(6px) rotate(45deg);
+            }
+
+            .menu-toggle.active .menu-line-2 {
+                opacity: 0;
+                transform: scaleX(0);
+            }
+
+            .menu-toggle.active .menu-line-3 {
+                transform: translateY(-6px) rotate(-45deg);
+            }
+
         }
 
         /* Dashboard / Analytics Section */
@@ -636,7 +874,6 @@
             border: 1px solid rgba(196, 30, 58, 0.15);
             border-radius: 16px;
             overflow: hidden;
-            cursor: none;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
@@ -834,7 +1071,6 @@
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid var(--crimson);
             color: var(--white);
-            cursor: none;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -857,6 +1093,16 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        @media (hover: none) and (pointer: coarse) {
+            .cursor, .cursor-dot, .cursor-ring, .cursor-particle {
+                display: none;
+            }
+
+            body, .nav-links a, .cta, .project-card, .preview-close {
+                cursor: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -864,6 +1110,10 @@
     <canvas id="embersCanvas"></canvas>
     <div class="scroll-progress" id="scrollProgress"></div>
     <div class="cursor" id="cursor"></div>
+    <div class="cursor-ring cursor-ring-1"></div>
+    <div class="cursor-ring cursor-ring-2"></div>
+    <div class="cursor-ring cursor-ring-3"></div>
+    <div class="cursor-dot" id="cursorDot"></div>
 
     <div class="floating-kanji left">月</div>
     <div class="floating-kanji right">影</div>
@@ -914,13 +1164,24 @@
         <div class="scroll-content">
             <nav id="navbar">
                 <div class="logo">SHA<span>DOW</span></div>
-                <ul class="nav-links">
-                    <li><a data-target="home">Home</a></li>
-                    <li><a data-target="about">About</a></li>
-                    <li><a data-target="dashboard">Dashboard</a></li>
-                    <li><a data-target="works">Works</a></li>
-                    <li><a data-target="projects">PROJECTS ARCHIVE</a></li>
-                </ul>
+                
+                <div class="nav-wrapper">
+                    <div class="menu-toggle" id="menuToggle">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path class="menu-line menu-line-1" d="M4 8H24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path class="menu-line menu-line-2" d="M4 14H24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path class="menu-line menu-line-3" d="M4 20H24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    
+                    <ul class="nav-links">
+                        <li><a data-target="home">Home</a></li>
+                        <li><a data-target="about">About</a></li>
+                        <li><a data-target="dashboard">Dashboard</a></li>
+                        <li><a data-target="works">Works</a></li>
+                        <li><a data-target="projects">PROJECTS ARCHIVE</a></li>
+                    </ul>
+                </div>
             </nav>
 
             <section class="hero" id="home">
@@ -1065,26 +1326,92 @@
     <script>
         // Custom cursor
         const cursor = document.getElementById('cursor');
+        const cursorDot = document.getElementById('cursorDot');
+        const cursorRings = document.querySelectorAll('.cursor-ring');
         let cursorX = 0, cursorY = 0;
+        let dotX = 0, dotY = 0;
+        let ringX = [0, 0, 0], ringY = [0, 0, 0];
         let targetX = 0, targetY = 0;
+        let lastParticleX = 0, lastParticleY = 0;
 
         document.addEventListener('mousemove', (e) => {
             targetX = e.clientX;
             targetY = e.clientY;
         });
 
+        function createParticle(x, y, burst) {
+            const particle = document.createElement('div');
+            particle.className = 'cursor-particle';
+            const size = Math.random() * 4 + 2;
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            
+            const angle = Math.random() * Math.PI * 2;
+            const distance = burst ? Math.random() * 60 + 20 : Math.random() * 20 + 5;
+            const tx = Math.cos(angle) * distance;
+            const ty = Math.sin(angle) * distance;
+            particle.style.setProperty('--tx', tx + 'px');
+            particle.style.setProperty('--ty', ty + 'px');
+            
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 700);
+        }
+
+        let particleThrottle = 0;
+        document.addEventListener('mousemove', (e) => {
+            particleThrottle++;
+            if (particleThrottle % 3 === 0) {
+                const dx = e.clientX - lastParticleX;
+                const dy = e.clientY - lastParticleY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 25) {
+                    createParticle(e.clientX, e.clientY, false);
+                    lastParticleX = e.clientX;
+                    lastParticleY = e.clientY;
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            for (let i = 0; i < 10; i++) {
+                createParticle(e.clientX, e.clientY, true);
+            }
+        });
+
         function animateCursor() {
-            cursorX += (targetX - cursorX) * 0.15;
-            cursorY += (targetY - cursorY) * 0.15;
-            cursor.style.left = cursorX - 10 + 'px';
-            cursor.style.top = cursorY - 10 + 'px';
+            cursorX += (targetX - cursorX) * 0.12;
+            cursorY += (targetY - cursorY) * 0.12;
+            dotX += (targetX - dotX) * 0.35;
+            dotY += (targetY - dotY) * 0.35;
+            
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            cursorDot.style.left = dotX + 'px';
+            cursorDot.style.top = dotY + 'px';
+            
+            cursorRings.forEach((ring, i) => {
+                const ease = 0.08 - i * 0.02;
+                ringX[i] += (targetX - ringX[i]) * ease;
+                ringY[i] += (targetY - ringY[i]) * ease;
+                ring.style.left = ringX[i] + 'px';
+                ring.style.top = ringY[i] + 'px';
+            });
+            
             requestAnimationFrame(animateCursor);
         }
         animateCursor();
 
         document.querySelectorAll('a, .cta, .card, .project-card, .dash-widget').forEach(el => {
-            el.addEventListener('mouseenter', () => cursor.classList.add('active'));
-            el.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+            el.addEventListener('mouseenter', () => {
+                cursor.classList.add('active');
+                cursorDot.classList.add('active');
+            });
+            el.addEventListener('mouseleave', () => {
+                cursor.classList.remove('active');
+                cursorDot.classList.remove('active');
+            });
         });
 
         // Custom smooth scroll
@@ -1191,6 +1518,32 @@
             if (scrollContainer.scrollTop < 50 && hero) {
                 hero.classList.remove('fade-out');
                 hero.classList.add('visible');
+            }
+        });
+
+        // Mobile menu hover
+        const menuToggle = document.getElementById('menuToggle');
+        const navWrapper = document.querySelector('.nav-wrapper');
+        const navLinks = document.querySelector('.nav-links');
+
+        function openMenu() {
+            menuToggle.classList.add('active');
+            navLinks.classList.add('active');
+        }
+
+        function closeMenu() {
+            menuToggle.classList.remove('active');
+            navLinks.classList.remove('active');
+        }
+
+        if (window.innerWidth <= 768) {
+            navWrapper.addEventListener('mouseenter', openMenu);
+            navWrapper.addEventListener('mouseleave', closeMenu);
+        }
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                closeMenu();
             }
         });
 

@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHADOW - シャドウ</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --crimson: #c41e3a;
+            --vermilion: #e34234;
+            --black: #0a0a0a;
+            --charcoal: #1a1a1a;
+            --white: #f5f5f5;
+            --gray: #888;
+            --gold: #d4af37;
+        }
+
+        html {
+            scroll-behavior: auto;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--black);
+            color: var(--white);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            cursor: none;
+        }
+
+        .scroll-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            scroll-behavior: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scroll-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        #smokeCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(60px);
+            opacity: 0.6;
+        }
+
+        #embersCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1.5rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 500;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(196, 30, 58, 0.15);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        nav.scrolled {
+            padding: 1rem 4rem;
+            background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid rgba(196, 30, 58, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 0.3em;
+            color: var(--white);
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+            color: var(--crimson);
+            text-shadow: 0 0 20px rgba(196, 30, 58, 0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 0.85rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            position: relative;
+            padding-bottom: 0.3rem;
+            transition: color 0.3s;
+            cursor: none;
+            opacity: 0.8;
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--crimson);
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--crimson);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .hero.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero.fade-out {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            text-align: center;
+        }
+
+        .vertical-text {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            position: absolute;
+            left: 4rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            letter-spacing: 0.5em;
+            color: var(--gray);
+            height: 60vh;
+        }
+
+        .vertical-text-right {
+            left: auto;
+            right: 4rem;
+        }
+
+        .kanji {
+            font-size: 12rem;
+            font-weight: 900;
+            color: var(--crimson);
+            line-height: 1;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 40px rgba(196, 30, 58, 0.3);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { text-shadow: 0 0 40px rgba(196, 30, 58, 0.3); }
+            50% { text-shadow: 0 0 80px rgba(196, 30, 58, 0.6); }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 0.8em;
+            color: var(--gray);
+            margin-bottom: 3rem;
+        }
+
+        .cta {
+            display: inline-block;
+            padding: 1rem 3rem;
+            border: 1px solid var(--crimson);
+            color: var(--white);
+            text-decoration: none;
+            letter-spacing: 0.3em;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            cursor: none;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--crimson);
+            transition: left 0.3s;
+            z-index: -1;
+        }
+
+        .cta:hover::before {
+            left: 0;
+        }
+
+        .intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--black);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.2s ease, visibility 1.2s ease;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .intro-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .intro-content {
+            text-align: center;
+            position: relative;
+        }
+
+        .intro-kanji {
+            font-size: 8rem;
+            font-weight: 900;
+            color: var(--crimson);
+            opacity: 0;
+            transform: scale(0.8);
+            animation: introReveal 2s ease-out 0.5s forwards;
+            text-shadow: 0 0 60px rgba(196, 30, 58, 0.5);
+        }
+
+        .intro-line {
+            width: 0;
+            height: 2px;
+            background: var(--crimson);
+            margin: 2rem auto;
+            animation: lineExpand 1.5s ease-out 1.5s forwards;
+        }
+
+        .intro-text {
+            font-size: 1rem;
+            letter-spacing: 0.8em;
+            color: var(--gray);
+            opacity: 0;
+            animation: fadeIn 1s ease-out 2s forwards;
+        }
+
+        @keyframes introReveal {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes lineExpand {
+            to {
+                width: 120px;
+            }
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .section {
+            padding: 8rem 4rem;
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .section.swap-out {
+            opacity: 0;
+            transform: translateY(60px);
+            pointer-events: none;
+        }
+
+        .section.swap-in {
+            animation: swapIn 0.8s ease forwards;
+        }
+
+        @keyframes swapIn {
+            from {
+                opacity: 0;
+                transform: translateY(60px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-title {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: var(--crimson);
+        }
+
+        .about-banner {
+            width: 100%;
+            max-height: 350px;
+            object-fit: cover;
+            border-radius: 16px;
+            border: 1px solid rgba(196, 30, 58, 0.3);
+            margin-bottom: 3rem;
+            display: block;
+            filter: brightness(0.85) contrast(1.1);
+            transition: filter 0.4s ease;
+        }
+
+        .about-banner:hover {
+            filter: brightness(1) contrast(1);
+        }
+
+        .section-subtitle {
+            color: var(--gray);
+            font-size: 0.9rem;
+            letter-spacing: 0.3em;
+            margin-bottom: 4rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background: var(--charcoal);
+            padding: 3rem;
+            border-left: 3px solid var(--crimson);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, transparent 50%, rgba(196, 30, 58, 0.1) 50%);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(196, 30, 58, 0.2);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--white);
+        }
+
+        .card p {
+            color: var(--gray);
+            line-height: 1.8;
+            font-weight: 300;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--crimson), transparent);
+            margin: 4rem 0;
+            opacity: 0.5;
+            position: relative;
+            z-index: 2;
+        }
+
+        footer {
+            padding: 4rem;
+            text-align: center;
+            border-top: 1px solid rgba(196, 30, 58, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        footer p {
+            color: var(--gray);
+            font-size: 0.85rem;
+            letter-spacing: 0.2em;
+        }
+
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: var(--crimson);
+            z-index: 200;
+            transition: width 0.1s linear;
+            width: 0%;
+        }
+
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--crimson);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor.active {
+            transform: scale(2);
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .vertical-text {
+                display: none;
+            }
+            nav {
+                padding: 1.5rem 2rem;
+            }
+            .nav-links {
+                gap: 1.5rem;
+            }
+            .section {
+                padding: 4rem 2rem;
+            }
+            .kanji {
+                font-size: 6rem;
+            }
+            .intro-kanji {
+                font-size: 5rem;
+            }
+            .cursor {
+                display: none;
+            }
+        }
+
+        /* Dashboard / Analytics Section */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .dash-widget {
+            background: var(--charcoal);
+            border: 1px solid rgba(196, 30, 58, 0.3);
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .dash-widget:hover {
+            border-color: var(--crimson);
+            box-shadow: 0 0 20px rgba(196, 30, 58, 0.2);
+        }
+
+        .dash-widget::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--crimson), transparent);
+        }
+
+        .dash-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            color: var(--gray);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .dash-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--crimson);
+            line-height: 1;
+        }
+
+        .dash-chart {
+            height: 60px;
+            margin-top: 1rem;
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .dash-bar {
+            flex: 1;
+            background: var(--crimson);
+            opacity: 0.7;
+            transition: height 0.5s ease;
+            min-height: 4px;
+        }
+
+        /* Decorative Elements */
+        .floating-kanji {
+            position: fixed;
+            font-size: 10rem;
+            font-weight: 900;
+            color: var(--crimson);
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+            writing-mode: vertical-rl;
+        }
+
+        .floating-kanji.left {
+            left: 2rem;
+            top: 20%;
+        }
+
+        .floating-kanji.right {
+            right: 2rem;
+            bottom: 20%;
+        }
+
+        @keyframes barGrow {
+            from { height: 0; }
+        }
+
+        .dash-bar {
+            animation: barGrow 1s ease forwards;
+        }
+
+        /* Projects Archive Section */
+        .projects-section {
+            padding: 8rem 4rem;
+            position: relative;
+            z-index: 2;
+            min-height: auto;
+            margin-top: 4rem;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .project-card {
+            background: var(--charcoal);
+            border: 1px solid rgba(196, 30, 58, 0.15);
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .project-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--crimson);
+            box-shadow: 0 20px 40px rgba(196, 30, 58, 0.2);
+        }
+
+        .project-thumb {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, var(--black), var(--crimson));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-thumb::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C41E3A' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        .project-icon {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            opacity: 0.3;
+        }
+
+        .project-info {
+            padding: 20px;
+        }
+
+        .project-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 8px;
+        }
+
+        .project-desc {
+            font-size: 12px;
+            color: var(--gray);
+            line-height: 1.5;
+        }
+
+        .project-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 4px 10px;
+            background: rgba(196, 30, 58, 0.1);
+            border: 1px solid rgba(196, 30, 58, 0.2);
+            border-radius: 20px;
+            font-size: 10px;
+            color: var(--vermilion);
+            letter-spacing: 1px;
+        }
+
+        /* Preview Scene */
+        .preview-scene {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-scene.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .preview-backdrop {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+        }
+
+        .preview-content {
+            position: relative;
+            z-index: 1;
+            width: 80%;
+            max-width: 900px;
+            background: var(--charcoal);
+            border: 1px solid var(--crimson);
+            border-radius: 24px;
+            overflow: hidden;
+            transform: scale(0.8) translateY(50px);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 60px rgba(196, 30, 58, 0.3);
+        }
+
+        .preview-scene.active .preview-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 350px;
+            background: linear-gradient(135deg, var(--crimson), var(--black), var(--vermilion));
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .preview-image::before {
+            content: '';
+            position: absolute;
+            width: 200%; height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(196, 30, 58, 0.03) 10px,
+                rgba(196, 30, 58, 0.03) 20px
+            );
+            animation: bgSlide 20s linear infinite;
+        }
+
+        @keyframes bgSlide {
+            from { transform: translate(0, 0); }
+            to { transform: translate(-50px, -50px); }
+        }
+
+        .preview-icon-large {
+            font-size: 80px;
+            z-index: 1;
+            filter: drop-shadow(0 0 20px rgba(196, 30, 58, 0.4));
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .preview-details {
+            padding: 40px;
+        }
+
+        .preview-title {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 28px;
+            color: var(--white);
+            margin-bottom: 15px;
+        }
+
+        .preview-stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 25px;
+        }
+
+        .preview-stat {
+            text-align: center;
+        }
+
+        .preview-stat-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--crimson);
+        }
+
+        .preview-stat-label {
+            font-size: 11px;
+            color: var(--gray);
+            margin-top: 4px;
+        }
+
+        .preview-close {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--crimson);
+            color: var(--white);
+            cursor: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+
+        .preview-close:hover {
+            background: var(--crimson);
+            color: var(--black);
+            transform: rotate(90deg);
+        }
+
+        @media (max-width: 768px) {
+            .projects-section {
+                padding: 4rem 2rem;
+            }
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="smokeCanvas"></canvas>
+    <canvas id="embersCanvas"></canvas>
+    <div class="scroll-progress" id="scrollProgress"></div>
+    <div class="cursor" id="cursor"></div>
+
+    <div class="floating-kanji left">月</div>
+    <div class="floating-kanji right">影</div>
+
+    <div class="preview-scene" id="previewScene">
+        <div class="preview-backdrop" id="previewBackdrop"></div>
+        <div class="preview-content">
+            <button class="preview-close" id="previewClose">&#10005;</button>
+            <div class="preview-image">
+                <div class="preview-icon-large" id="previewIcon">&#128640;</div>
+            </div>
+            <div class="preview-details">
+                <h2 class="preview-title" id="previewTitle">Project Name</h2>
+                <div class="preview-stats">
+                    <div class="preview-stat">
+                        <div class="preview-stat-value" id="previewViews">12.5K</div>
+                        <div class="preview-stat-label">閲覧</div>
+                    </div>
+                    <div class="preview-stat">
+                        <div class="preview-stat-value" id="previewLikes">892</div>
+                        <div class="preview-stat-label">いいね</div>
+                    </div>
+                    <div class="preview-stat">
+                        <div class="preview-stat-value" id="previewCommits">234</div>
+                        <div class="preview-stat-label">コミット</div>
+                    </div>
+                    <div class="preview-stat">
+                        <div class="preview-stat-value" id="previewScore">9.4</div>
+                        <div class="preview-stat-label">評価</div>
+                    </div>
+                </div>
+                <p style="color:#888;font-size:14px;line-height:1.7;" id="previewDesc">
+                    プロジェクトの詳細説明がここに表示されます。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="intro-overlay" id="intro">
+        <div class="intro-content">
+            <div class="intro-kanji">シャドウ</div>
+            <div class="intro-line"></div>
+            <div class="intro-text">SHADOW</div>
+        </div>
+    </div>
+
+    <div class="scroll-container" id="scrollContainer">
+        <div class="scroll-content">
+            <nav id="navbar">
+                <div class="logo">SHA<span>DOW</span></div>
+                <ul class="nav-links">
+                    <li><a data-target="home">Home</a></li>
+                    <li><a data-target="about">About</a></li>
+                    <li><a data-target="dashboard">Dashboard</a></li>
+                    <li><a data-target="works">Works</a></li>
+                    <li><a data-target="projects">PROJECTS ARCHIVE</a></li>
+                </ul>
+            </nav>
+
+            <section class="hero" id="home">
+                <div class="vertical-text">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
+                <div class="vertical-text vertical-text-right">by.SHADOW | シャドウ</div>
+                
+                <div class="hero-content">
+                    <div class="kanji">シャドウ</div>
+                    <div class="subtitle">PORTFOLIO</div>
+                    <a class="cta" data-target="about"> INFO </a>
+                </div>
+            </section>
+
+            <section class="section" id="about">
+                <img class="about-banner" src="nsh.jpg" alt="About banner">
+                <h2 class="section-title">私たちについて</h2>
+                <p class="section-subtitle">ABOUT US</p>
+                
+                <div class="grid">
+                    <div class="card">
+                        <h3>ミニマリズム</h3>
+                        <p>Less is more. We embrace the Japanese philosophy of simplicity and elegance, creating experiences that speak through silence and space.</p>
+                    </div>
+                    <div class="card">
+                        <h3>美学</h3>
+                        <p>Aesthetics rooted in tradition yet forward-looking. Every detail matters, from the brushstroke to the pixel.</p>
+                    </div>
+                    <div class="card">
+                        <h3>革新</h3>
+                        <p>Pushing boundaries with precision and purpose. Innovation guided by the wisdom of centuries.</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="divider"></div>
+
+            <section class="section" id="dashboard">
+                <h2 class="section-title">ダッシュボード</h2>
+                <p class="section-subtitle">ANALYTICS</p>
+                
+                <div class="dashboard-grid">
+                    <div class="dash-widget">
+                        <div class="dash-label">Total Visitors</div>
+                        <div class="dash-value" id="totalVisitors">0</div>
+                        <div class="dash-chart" id="visitorsChart"></div>
+                    </div>
+                    <div class="dash-widget">
+                        <div class="dash-label">Projects</div>
+                        <div class="dash-value">12</div>
+                        <div class="dash-chart" id="projectsChart"></div>
+                    </div>
+                    <div class="dash-widget">
+                        <div class="dash-label">Engagement</div>
+                        <div class="dash-value">87%</div>
+                        <div class="dash-chart" id="engagementChart"></div>
+                    </div>
+                    <div class="dash-widget">
+                        <div class="dash-label">Sessions</div>
+                        <div class="dash-value" id="sessionTime">0:00</div>
+                        <div class="dash-chart" id="sessionsChart"></div>
+                    </div>
+                </div>
+
+                <div class="grid" style="margin-top: 3rem;">
+                    <div class="card">
+                        <h3>リアルタイム解析</h3>
+                        <p>Real-time analytics powered by cutting-edge tracking. Monitor user behavior and optimize experiences with precision.</p>
+                    </div>
+                    <div class="card">
+                        <h3>ユーザーエンゲージメント</h3>
+                        <p>Deep insights into how visitors interact with your content. Every scroll, click, and hover tells a story.</p>
+                    </div>
+                    <div class="card">
+                        <h3>パフォーマンス</h3>
+                        <p>Lightning-fast performance metrics. Speed, reliability, and scalability measured in milliseconds.</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="divider"></div>
+
+            <section class="section" id="works">
+                <h2 class="section-title">作品集</h2>
+                <p class="section-subtitle">WORKS</p>
+                
+                <div class="grid">
+                    <div class="project-card" data-icon="&#127800;" data-views="8.4K" data-likes="567" data-commits="198" data-score="9.2">
+                        <div class="project-thumb">
+                            <div class="project-icon">&#127800;</div>
+                        </div>
+                        <div class="project-info">
+                            <div class="project-name">一期一会</div>
+                            <div class="project-desc">One encounter, one opportunity. Each project is a unique moment captured in digital form.</div>
+                            <div class="project-tags"><span class="tag">Art</span><span class="tag">Culture</span></div>
+                        </div>
+                    </div>
+                    <div class="project-card" data-icon="&#127810;" data-views="12.1K" data-likes="743" data-commits="289" data-score="9.5">
+                        <div class="project-thumb">
+                            <div class="project-icon">&#127810;</div>
+                        </div>
+                        <div class="project-info">
+                            <div class="project-name">侘寂</div>
+                            <div class="project-desc">Finding beauty in imperfection. We celebrate the authentic, the weathered, and the timeless.</div>
+                            <div class="project-tags"><span class="tag">Minimalism</span><span class="tag">Design</span></div>
+                        </div>
+                    </div>
+                    <div class="project-card" data-icon="&#128692;" data-views="15.3K" data-likes="892" data-commits="312" data-score="9.7">
+                        <div class="project-thumb">
+                            <div class="project-icon">&#128692;</div>
+                        </div>
+                        <div class="project-info">
+                            <div class="project-name">道</div>
+                            <div class="project-desc">The way. A continuous journey of mastery, discipline, and artistic expression.</div>
+                            <div class="project-tags"><span class="tag">Philosophy</span><span class="tag">Journey</span></div>
+                        </div>
+                    </div>
+                    <div class="project-card" data-icon="&#127754;" data-views="18.7K" data-likes="1.1K" data-commits="456" data-score="9.9">
+                        <div class="project-thumb">
+                            <div class="project-icon">&#127754;</div>
+                        </div>
+                        <div class="project-info">
+                            <div class="project-name">風流</div>
+                            <div class="project-desc">Elegance in motion. Capturing the fleeting beauty of natural phenomena in digital space.</div>
+                            <div class="project-tags"><span class="tag">Nature</span><span class="tag">Elegance</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="projects-section" id="projects">
+                <h2 class="section-title">プロジェクト</h2>
+                <p class="section-subtitle">PROJECTS ARCHIVE</p>
+                <div class="projects-grid" id="projectsGrid"></div>
+            </div>
+
+            <footer id="contact">
+                <p>&copy; 2026 SHADOW — シャドウ — All Rights Reserved</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Custom cursor
+        const cursor = document.getElementById('cursor');
+        let cursorX = 0, cursorY = 0;
+        let targetX = 0, targetY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            targetX = e.clientX;
+            targetY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorX += (targetX - cursorX) * 0.15;
+            cursorY += (targetY - cursorY) * 0.15;
+            cursor.style.left = cursorX - 10 + 'px';
+            cursor.style.top = cursorY - 10 + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        document.querySelectorAll('a, .cta, .card, .project-card, .dash-widget').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('active'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+        });
+
+        // Custom smooth scroll
+        const scrollContainer = document.getElementById('scrollContainer');
+        const navbar = document.getElementById('navbar');
+        let isScrolling = false;
+        let scrollTimeout;
+
+        function smoothScrollTo(targetY, duration = 1200) {
+            const startY = scrollContainer.scrollTop;
+            const distance = targetY - startY;
+            const startTime = performance.now();
+
+            function easeInOutCubic(t) {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }
+
+            function step(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = easeInOutCubic(progress);
+                
+                scrollContainer.scrollTop = startY + distance * eased;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // Nav scroll animation
+        scrollContainer.addEventListener('scroll', () => {
+            const scrollTop = scrollContainer.scrollTop;
+            const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+            const progress = (scrollTop / scrollHeight) * 100;
+            document.getElementById('scrollProgress').style.width = progress + '%';
+
+            if (scrollTop > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Navigation with swap animation
+        const hero = document.getElementById('home');
+        
+        // Intro scene
+        const intro = document.getElementById('intro');
+        setTimeout(() => {
+            intro.classList.add('hidden');
+            if (hero) {
+                hero.classList.add('visible');
+            }
+        }, 3500);
+        
+        document.querySelectorAll('[data-target]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('data-target');
+                const target = document.getElementById(targetId);
+                if (!target) return;
+
+                const sections = document.querySelectorAll('.section');
+
+                sections.forEach(section => {
+                    if (section.classList.contains('swap-in') || section.style.opacity === '1') {
+                        section.classList.add('swap-out');
+                    }
+                });
+
+                if (targetId === 'home') {
+                    hero.classList.remove('fade-out');
+                    hero.classList.add('visible');
+                    smoothScrollTo(0, 1000);
+                } else {
+                    if (hero) {
+                        hero.classList.add('fade-out');
+                        hero.classList.remove('visible');
+                    }
+                }
+
+                if (targetId !== 'home') {
+                    setTimeout(() => {
+                        const targetRect = target.getBoundingClientRect();
+                        const containerRect = scrollContainer.getBoundingClientRect();
+                        const targetY = targetRect.top - containerRect.top + scrollContainer.scrollTop;
+
+                        smoothScrollTo(targetY, 1000);
+
+                        setTimeout(() => {
+                            sections.forEach(section => section.classList.remove('swap-out'));
+                            target.classList.add('swap-in');
+                            setTimeout(() => target.classList.remove('swap-in'), 800);
+                        }, 300);
+                    }, 400);
+                }
+            });
+        });
+
+        // Show hero on scroll to top
+        scrollContainer.addEventListener('scroll', () => {
+            if (scrollContainer.scrollTop < 50 && hero) {
+                hero.classList.remove('fade-out');
+                hero.classList.add('visible');
+            }
+        });
+
+        // Red smoke particles
+        const smokeCanvas = document.getElementById('smokeCanvas');
+        const smokeCtx = smokeCanvas.getContext('2d');
+        let smokeParticles = [];
+        const smokeCount = 60;
+
+        function resizeSmoke() {
+            smokeCanvas.width = window.innerWidth;
+            smokeCanvas.height = window.innerHeight;
+        }
+        resizeSmoke();
+        window.addEventListener('resize', resizeSmoke);
+
+        class SmokeParticle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * smokeCanvas.width;
+                this.y = smokeCanvas.height + Math.random() * 200;
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = -Math.random() * 1.2 - 0.3;
+                this.radius = Math.random() * 120 + 60;
+                this.alpha = Math.random() * 0.15 + 0.05;
+                this.alphaChange = (Math.random() - 0.5) * 0.002;
+                this.color = Math.random() > 0.5 ? '196, 30, 58' : '227, 66, 52';
+            }
+
+            update() {
+                this.x += this.vx + Math.sin(Date.now() * 0.001 + this.y) * 0.3;
+                this.y += this.vy;
+                this.alpha += this.alphaChange;
+
+                if (this.alpha <= 0.02 || this.alpha >= 0.2) {
+                    this.alphaChange *= -1;
+                }
+
+                if (this.y < -this.radius * 2) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                const gradient = smokeCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(0.5, `rgba(${this.color}, ${this.alpha * 0.5})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                
+                smokeCtx.beginPath();
+                smokeCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                smokeCtx.fillStyle = gradient;
+                smokeCtx.fill();
+            }
+        }
+
+        for (let i = 0; i < smokeCount; i++) {
+            smokeParticles.push(new SmokeParticle());
+        }
+
+        function animateSmoke() {
+            smokeCtx.clearRect(0, 0, smokeCanvas.width, smokeCanvas.height);
+            smokeParticles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateSmoke);
+        }
+        animateSmoke();
+
+        // Embers particles
+        const embersCanvas = document.getElementById('embersCanvas');
+        const embersCtx = embersCanvas.getContext('2d');
+        let embers = [];
+        const emberCount = 40;
+
+        function resizeEmbers() {
+            embersCanvas.width = window.innerWidth;
+            embersCanvas.height = window.innerHeight;
+        }
+        resizeEmbers();
+        window.addEventListener('resize', resizeEmbers);
+
+        class Ember {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * embersCanvas.width;
+                this.y = embersCanvas.height + 10;
+                this.size = Math.random() * 3 + 1;
+                this.speedY = -Math.random() * 1.5 - 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.alpha = Math.random() * 0.8 + 0.2;
+                this.life = Math.random() * 200 + 100;
+                this.maxLife = this.life;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX + Math.sin(this.y * 0.01) * 0.3;
+                this.life--;
+                this.alpha = (this.life / this.maxLife) * 0.8;
+
+                if (this.life <= 0 || this.y < -10) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                embersCtx.beginPath();
+                embersCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                embersCtx.fillStyle = `rgba(196, 30, 58, ${this.alpha})`;
+                embersCtx.fill();
+                
+                embersCtx.beginPath();
+                embersCtx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+                embersCtx.fillStyle = `rgba(227, 66, 52, ${this.alpha * 0.3})`;
+                embersCtx.fill();
+            }
+        }
+
+        for (let i = 0; i < emberCount; i++) {
+            embers.push(new Ember());
+        }
+
+        function animateEmbers() {
+            embersCtx.clearRect(0, 0, embersCanvas.width, embersCanvas.height);
+            embers.forEach(e => {
+                e.update();
+                e.draw();
+            });
+            requestAnimationFrame(animateEmbers);
+        }
+        animateEmbers();
+
+        // Visit Counter
+        let visits = parseInt(localStorage.getItem('nekospy_visits') || '0');
+        visits++;
+        localStorage.setItem('nekospy_visits', visits.toString());
+        
+        const totalVisitorsEl = document.getElementById('totalVisitors');
+        
+        function animateCounter(element, target) {
+            let current = 0;
+            const increment = Math.ceil(target / 30);
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = current;
+            }, 30);
+        }
+        
+        setTimeout(() => {
+            animateCounter(totalVisitorsEl, visits + 1247);
+        }, 4000);
+
+        // Dashboard Charts
+        function createChart(elementId, color) {
+            const chart = document.getElementById(elementId);
+            if (!chart) return;
+            const bars = 20;
+            for (let i = 0; i < bars; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'dash-bar';
+                const height = Math.random() * 80 + 20;
+                bar.style.height = height + '%';
+                bar.style.background = color || 'var(--crimson)';
+                bar.style.animationDelay = (i * 0.05) + 's';
+                chart.appendChild(bar);
+            }
+        }
+
+        setTimeout(() => {
+            createChart('visitorsChart', 'var(--crimson)');
+            createChart('projectsChart', 'var(--vermilion)');
+            createChart('engagementChart', 'var(--gold)');
+            createChart('sessionsChart', 'var(--crimson)');
+        }, 4000);
+
+        // Session timer
+        let sessionSeconds = 0;
+        setInterval(() => {
+            sessionSeconds++;
+            const mins = Math.floor(sessionSeconds / 60);
+            const secs = sessionSeconds % 60;
+            document.getElementById('sessionTime').textContent = 
+                mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }, 1000);
+
+        // Works Preview on Click
+        document.querySelectorAll('.project-card[data-icon]').forEach(card => {
+            card.addEventListener('click', () => {
+                document.getElementById('previewIcon').textContent = card.getAttribute('data-icon');
+                document.getElementById('previewTitle').textContent = card.querySelector('.project-name').textContent;
+                document.getElementById('previewDesc').textContent = card.querySelector('.project-desc').textContent;
+                document.getElementById('previewViews').textContent = card.getAttribute('data-views');
+                document.getElementById('previewLikes').textContent = card.getAttribute('data-likes');
+                document.getElementById('previewCommits').textContent = card.getAttribute('data-commits');
+                document.getElementById('previewScore').textContent = card.getAttribute('data-score');
+                document.getElementById('previewScene').classList.add('active');
+            });
+        });
+
+        // Touch support for mobile
+        let touchStartY = 0;
+        scrollContainer.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        // Initialize first section
+        document.getElementById('about').classList.add('swap-in');
+        setTimeout(() => {
+            const about = document.getElementById('about');
+            if (about) about.classList.remove('swap-in');
+        }, 800);
+
+        // Projects Archive
+        const projects = [
+            { name: '紅蓮の翼', desc: '次世代AIチャットボットプラットフォーム。自然言語処理と深層学習を融合。', icon: '\uD83E\uDD16', tags: ['AI', 'NLP', 'Python'], views: '24.2K', likes: '1.2K', commits: '456', score: '9.8' },
+            { name: '桜吹雪', desc: 'リアルタイムデータ可視化ダッシュボード。WebSocket対応の高性能UI。', icon: '\uD83D\uDCCA', tags: ['React', 'D3.js', 'Node'], views: '18.7K', likes: '892', commits: '312', score: '9.5' },
+            { name: '月読の眼', desc: 'コンピュータビジョンによる画像認識システム。99.2%の精度を達成。', icon: '\uD83D\uDC41', tags: ['CV', 'PyTorch', 'CUDA'], views: '15.3K', likes: '743', commits: '289', score: '9.3' },
+            { name: '風神の息', desc: '分散型クラウドストレージソリューション。ブロックチェーン技術を活用。', icon: '\u2601\uFE0F', tags: ['Blockchain', 'Go', 'IPFS'], views: '12.1K', likes: '567', commits: '198', score: '9.1' },
+            { name: '雷神の槌', desc: '高性能ロードバランサー。1秒間に100万リクエストを処理可能。', icon: '\u26A1', tags: ['Rust', 'K8s', 'Cloud'], views: '9.8K', likes: '432', commits: '156', score: '8.9' },
+            { name: '水鏡', desc: 'セキュアなP2P通信プロトコル。エンドツーエンド暗号化を標準搭載。', icon: '\uD83D\uDD12', tags: ['Crypto', 'Rust', 'P2P'], views: '8.4K', likes: '398', commits: '134', score: '8.7' }
+        ];
+
+        const projectsGrid = document.getElementById('projectsGrid');
+        const previewScene = document.getElementById('previewScene');
+        const previewBackdrop = document.getElementById('previewBackdrop');
+        const previewClose = document.getElementById('previewClose');
+
+        projects.forEach((p, i) => {
+            const card = document.createElement('div');
+            card.className = 'project-card';
+            card.innerHTML = `
+                <div class="project-thumb">
+                    <div class="project-icon">${p.icon}</div>
+                </div>
+                <div class="project-info">
+                    <div class="project-name">${p.name}</div>
+                    <div class="project-desc">${p.desc}</div>
+                    <div class="project-tags">${p.tags.map(t => '<span class="tag">' + t + '</span>').join('')}</div>
+                </div>
+            `;
+            card.addEventListener('click', () => openPreview(p));
+            projectsGrid.appendChild(card);
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 600 + i * 100);
+        });
+
+        function openPreview(p) {
+            document.getElementById('previewIcon').textContent = p.icon;
+            document.getElementById('previewTitle').textContent = p.name;
+            document.getElementById('previewDesc').textContent = p.desc;
+            document.getElementById('previewViews').textContent = p.views;
+            document.getElementById('previewLikes').textContent = p.likes;
+            document.getElementById('previewCommits').textContent = p.commits;
+            document.getElementById('previewScore').textContent = p.score;
+            previewScene.classList.add('active');
+        }
+
+        previewClose.addEventListener('click', () => previewScene.classList.remove('active'));
+        previewBackdrop.addEventListener('click', () => previewScene.classList.remove('active'));
+    </script>
+</body>
+</html>
